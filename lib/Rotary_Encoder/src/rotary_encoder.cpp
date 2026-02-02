@@ -16,7 +16,8 @@ void Encoder::begin()
     pinMode(b,  INPUT_PULLUP);
 
     attachInterrupt(digitalPinToInterrupt(sw), Encoder::isr, FALLING);
-    attachInterrupt(digitalPinToInterrupt(a), Encoder::isr, RISING); // only need to check one of pin a or b
+    attachInterrupt(digitalPinToInterrupt(a), Encoder::isr, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(b), Encoder::isr, CHANGE);
 }
 
 EncoderEvent Encoder::checkUpdate()
@@ -39,24 +40,87 @@ void Encoder::isr()
 
     uint32_t now = micros();
 
-    if ( now - instance->last_isr_us < 200 )
-        return;
-    instance->last_isr_us = now;
+    int sw = digitalRead( instance->sw );
+    int a =  digitalRead( instance->a );
+    int b =  digitalRead( instance->b );
 
-    if ( digitalRead( instance->sw ) == LOW )
+    /* Button */
+    if ( sw == LOW ) /* TODO if problem arise: Known issue here is having the button pressed 
+                        while turning will generate button presses, fine for now */
     {
-        if ( now - instance->last_btn_us < 15000 )
+        if ( now - instance->last_btn_us < BTN_DEBOUNCE_US )
             return;
         instance->last_btn_us = now;
         instance->pending_event = EncoderEvent::BTN;
-    }
-    else
-    {
-        if ( digitalRead( instance->a ) == digitalRead( instance->b) )
-            instance->pending_event = EncoderEvent::CCW;
-        else
-            instance->pending_event = EncoderEvent::CW;
+        instance->event_flag = true;
     }
 
-    instance->event_flag = true;
+    /* Rotation */
+    else
+    {
+        switch( instance->current_state )
+        {
+            case RotationState::Idle:
+                if ( a == LOW && b == HIGH )
+                    instance->current_state = RotationState::CW1;
+                else if ( a == HIGH && b == LOW )
+                    instance->current_state = RotationState::CCW1;
+                break;
+
+            /* CW */
+            case RotationState::CW1:
+                if ( a == LOW && b == LOW )
+                    instance->current_state = RotationState::CW2;
+                else if ( a == HIGH && b == HIGH )
+                {
+                    instance->current_state = RotationState::Idle; /* Bounce */
+                }
+                break;
+
+            case RotationState::CW2:
+                if ( a == HIGH && b == LOW )
+                {
+                    instance->current_state = RotationState::CW3;
+                }
+                break;
+
+            case RotationState::CW3:
+                if ( a == HIGH && b == HIGH )
+                {
+                    instance->pending_event = EncoderEvent::CW;
+                    instance->current_state = RotationState::Idle;
+                    instance->event_flag = true;
+                }
+                break;
+
+            /* CCW */
+            case RotationState::CCW1:
+                if ( a == LOW && b == LOW )
+                    instance->current_state = RotationState::CCW2;
+                else if ( a == HIGH && b == HIGH )
+                {
+                    instance->current_state = RotationState::Idle; /* Bounce */
+                }
+                break;
+
+            case RotationState::CCW2:
+                if ( a == LOW && b == HIGH )
+                {
+                    instance->current_state = RotationState::CCW3;
+                }
+                break;
+
+            case RotationState::CCW3:
+                if ( a == HIGH && b == HIGH )
+                {
+                    instance->pending_event = EncoderEvent::CCW;
+                    instance->current_state = RotationState::Idle;
+                    instance->event_flag = true;
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
 }

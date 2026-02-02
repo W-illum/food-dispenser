@@ -18,7 +18,7 @@
 
 /* Globals */
 //Qwiic1in3OLED myOLED;
-Encoder myEncoder(D9, D10, D11);
+Encoder enc(D9, D10, D11);
 
 void setup()
 {
@@ -33,14 +33,30 @@ void setup()
     pinMode(TMC_EN,     OUTPUT);
     pinMode(LED_BUILTIN, OUTPUT);
 
-    myEncoder.begin();
+    enc.begin();
     Wire.begin(SDA, SCL);
     delay(100);
 }
 
 void loop()
 {
-    EncoderEvent e = myEncoder.checkUpdate();
+    EncoderEvent e = enc.checkUpdate();
     if ( e != EncoderEvent::None)
-        Serial.print(int(e));
+    {
+        switch(e)
+        {
+            case EncoderEvent::BTN:
+                Serial.print("BTN");
+                break;
+
+            case EncoderEvent::CW:
+                Serial.print("CW");
+                break;
+
+            case EncoderEvent::CCW:
+                Serial.print("CCW");
+                break;
+        }
+        Serial.print("||");
+    }
 }
