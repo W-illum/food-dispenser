@@ -4,14 +4,14 @@
 #define BTN_DEBOUNCE_US 350000
 
 enum class EncoderEvent : uint8_t {
-    None,
+    NONE,
     CW,
     CCW,
     BTN
 };
 
 enum class RotationState : uint8_t {
-    Idle,
+    IDLE,
     CW1,
     CW2,
     CW3,
@@ -23,7 +23,7 @@ enum class RotationState : uint8_t {
 class Encoder
 {
 public:
-    Encoder(int8_t pin_sw, int8_t pin_a, int8_t pin_b);
+    Encoder( int8_t pin_sw, int8_t pin_a, int8_t pin_b );
     void begin();
     EncoderEvent checkUpdate();
 
@@ -32,12 +32,12 @@ private:
 
 private:
     static Encoder* instance;
-    int8_t sw, a, b;
+    int8_t pin_sw, pin_a, pin_b;
 
     volatile bool event_flag = false;
 
-    volatile EncoderEvent pending_event = EncoderEvent::None;
-    volatile RotationState current_state = RotationState::Idle;
+    volatile EncoderEvent pending_event = EncoderEvent::NONE;
+    volatile RotationState current_state = RotationState::IDLE;
 
     volatile uint32_t last_btn_us = 0;
 };
