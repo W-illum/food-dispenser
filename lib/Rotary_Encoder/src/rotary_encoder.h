@@ -31,7 +31,7 @@ private:
     static void isr();
 
 private:
-    static Encoder* instance;
+    static Encoder *instance;
     gpio_num_t SW, A, B;
 
     volatile bool event_flag = false;
