@@ -34,7 +34,6 @@ void setup()
     enc.begin();
     stepper.begin();
     delay(100);
-    stepper.setMicroStep(16);
 }
 
 void loop()
@@ -50,12 +49,12 @@ void loop()
 
             case EncoderEvent::CW:
                 Serial.print("CW");
-                stepper.turnCW();
+                stepper.rotate( 360, Dir::CW );
                 break;
 
             case EncoderEvent::CCW:
                 Serial.print("CCW");
-                stepper.turnCCW();
+                stepper.rotate( 360, Dir::CCW );
                 break;
         }
         Serial.print("||");
