@@ -1,12 +1,18 @@
 #include "tmc_stepper.h"
 
+TMCStepper *TMCStepper::instance = nullptr;
+hw_timer_t *TMCStepper::timer = nullptr;
+
 TMCStepper::TMCStepper( gpio_num_t DIR, gpio_num_t STEP, gpio_num_t MS2, gpio_num_t MS1, gpio_num_t EN )
-    :   DIR( DIR ), STEP( STEP ), MS2( MS2 ), MS1( MS1), EN( EN )
-{
-}
+    :   DIR( DIR ), STEP( STEP ), MS2( MS2 ), MS1( MS1), EN( EN ) {}
 
 void TMCStepper::begin()
 {
+    instance = this;
+    timer = timerBegin( 0, 80, true );
+    timerAttachInterrupt( timer, &TMCStepper::timerISR, true );
+    timerAlarmWrite( timer, 1000, true ); /* PSC:80 -> 1Mhz -> 1 step each 1ms */
+
     gpio_set_direction( DIR,  GPIO_MODE_OUTPUT );
     gpio_set_direction( STEP, GPIO_MODE_OUTPUT );
     gpio_set_direction( MS2,  GPIO_MODE_OUTPUT );
@@ -17,7 +23,7 @@ void TMCStepper::begin()
     setMicroStep( 8 ); /* Default */
 }
 
-bool TMCStepper::setMicroStep(int step)
+bool TMCStepper::setMicroStep( int step )
 {
     /* Stated in datasheet
     MS1     MS2     STEPS
@@ -54,28 +60,28 @@ bool TMCStepper::setMicroStep(int step)
     }
 }
 
-void TMCStepper::turnCW()
+void TMCStepper::rotate( uint deg, Dir dir )
 {
-    gpio_set_level(DIR, HIGH);
+    if ( dir == Dir::CW ) 
+        GPIO.out_w1ts = ( 1UL << DIR );
+    else 
+        GPIO.out_w1tc = ( 1UL << DIR );
 
-    for ( int i = 0; i < 200 * micro_step; i++ )
-    {
-        gpio_set_level(STEP, HIGH);
-        delayMicroseconds(2);
-        gpio_set_level(STEP, LOW);
-        delayMicroseconds(800);
-    }
+    remaining_steps = (uint32_t)( deg * steps_per_rev * micro_step / 360.0 );
+    timerAlarmEnable( timer );
 }
 
-void TMCStepper::turnCCW()
+void IRAM_ATTR TMCStepper::timerISR()
 {
-    gpio_set_level(DIR, LOW);
+    if ( !instance ) return;
 
-    for ( int i = 0; i < 200 * micro_step; i++ )
+    if ( instance->remaining_steps > 0 )
     {
-        gpio_set_level(STEP, HIGH);
-        delayMicroseconds(2);
-        gpio_set_level(STEP, LOW);
-        delayMicroseconds(800);
+        GPIO.out_w1ts = ( 1UL << instance->STEP );
+        ets_delay_us( 2 );
+        GPIO.out_w1tc = ( 1UL << instance->STEP );
+
+        instance->remaining_steps -= 1;
     }
+    else timerAlarmDisable( timer );
 }
