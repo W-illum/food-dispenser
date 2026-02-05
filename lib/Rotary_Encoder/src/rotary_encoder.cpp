@@ -3,21 +3,21 @@
 
 Encoder* Encoder::instance = nullptr;
 
-Encoder::Encoder( int8_t pin_sw, int8_t pin_a, int8_t pin_b )
-    :   pin_sw( pin_sw ), pin_a( pin_a ), pin_b( pin_b )
+Encoder::Encoder( gpio_num_t SW, gpio_num_t A, gpio_num_t B )
+    :   SW( SW ), A( A ), B( B )
 {
     instance = this;
 }
 
 void Encoder::begin()
 {
-    pinMode( pin_sw, INPUT_PULLUP );
-    pinMode( pin_a,  INPUT_PULLUP );
-    pinMode( pin_b,  INPUT_PULLUP );
+    gpio_set_direction( SW, GPIO_MODE_INPUT ); gpio_set_pull_mode(SW, GPIO_PULLUP_ONLY);
+    gpio_set_direction( A,  GPIO_MODE_INPUT ); gpio_set_pull_mode(A, GPIO_PULLUP_ONLY);
+    gpio_set_direction( B,  GPIO_MODE_INPUT ); gpio_set_pull_mode(B, GPIO_PULLUP_ONLY);
 
-    attachInterrupt( digitalPinToInterrupt( pin_sw ), Encoder::isr, FALLING );
-    attachInterrupt( digitalPinToInterrupt( pin_a ), Encoder::isr, CHANGE );
-    attachInterrupt( digitalPinToInterrupt( pin_b ), Encoder::isr, CHANGE );
+    attachInterrupt( SW, Encoder::isr, FALLING );
+    attachInterrupt( A, Encoder::isr, CHANGE );
+    attachInterrupt( B, Encoder::isr, CHANGE );
 }
 
 EncoderEvent Encoder::checkUpdate()
@@ -40,12 +40,12 @@ void Encoder::isr()
 
     uint32_t now = micros();
 
-    int pin_sw = digitalRead( instance->pin_sw );
-    int pin_a =  digitalRead( instance->pin_a );
-    int pin_b =  digitalRead( instance->pin_b );
+    int SW = gpio_get_level( instance->SW );
+    int A =  gpio_get_level( instance->A );
+    int B =  gpio_get_level( instance->B );
 
     /* Button */
-    if ( pin_sw == LOW ) /* TODO if problem arise: Known issue here is having the button pressed 
+    if ( SW == LOW ) /* TODO if problem arise: Known issue here is having the button pressed 
                         while turning will generate button presses, fine for now */
     {
         if ( now - instance->last_btn_us < BTN_DEBOUNCE_US )
@@ -61,35 +61,35 @@ void Encoder::isr()
         switch( instance->current_state )
         {
             case RotationState::IDLE:
-                if ( pin_a == LOW && pin_b == HIGH )
+                if ( A == LOW && B == HIGH )
                     instance->current_state = RotationState::CW1;
-                else if ( pin_a == HIGH && pin_b == LOW )
+                else if ( A == HIGH && B == LOW )
                     instance->current_state = RotationState::CCW1;
                 break;
 
             /* CW */
             case RotationState::CW1:
-                if ( pin_a == LOW && pin_b == LOW )
+                if ( A == LOW && B == LOW )
                     instance->current_state = RotationState::CW2;
-                else if ( pin_a == HIGH && pin_b == HIGH )
+                else if ( A == HIGH && B == HIGH )
                 {
                     instance->current_state = RotationState::IDLE; /* Bounce or change of direction */
                 }
                 break;
 
             case RotationState::CW2:
-                if ( pin_a == HIGH && pin_b == LOW )
+                if ( A == HIGH && B == LOW )
                 {
                     instance->current_state = RotationState::CW3;
                 }
-                else if ( pin_a == HIGH && pin_b == HIGH )
+                else if ( A == HIGH && B == HIGH )
                 {
                     instance->current_state = RotationState::IDLE; /* Bounce or change of direction */
                 }
                 break;
 
             case RotationState::CW3:
-                if ( pin_a == HIGH && pin_b == HIGH )
+                if ( A == HIGH && B == HIGH )
                 {
                     instance->pending_event = EncoderEvent::CW;
                     instance->current_state = RotationState::IDLE;
@@ -99,27 +99,27 @@ void Encoder::isr()
 
             /* CCW */
             case RotationState::CCW1:
-                if ( pin_a == LOW && pin_b == LOW )
+                if ( A == LOW && B == LOW )
                     instance->current_state = RotationState::CCW2;
-                else if ( pin_a == HIGH && pin_b == HIGH )
+                else if ( A == HIGH && B == HIGH )
                 {
                     instance->current_state = RotationState::IDLE; /* Bounce or change of direction */
                 }
                 break;
 
             case RotationState::CCW2:
-                if ( pin_a == LOW && pin_b == HIGH )
+                if ( A == LOW && B == HIGH )
                 {
                     instance->current_state = RotationState::CCW3;
                 }
-                else if ( pin_a == HIGH && pin_b == HIGH )
+                else if ( A == HIGH && B == HIGH )
                 {
                     instance->current_state = RotationState::IDLE; /* Bounce or change of direction */
                 }
                 break;
 
             case RotationState::CCW3:
-                if ( pin_a == HIGH && pin_b == HIGH )
+                if ( A == HIGH && B == HIGH )
                 {
                     instance->pending_event = EncoderEvent::CCW;
                     instance->current_state = RotationState::IDLE;

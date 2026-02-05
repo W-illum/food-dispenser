@@ -1,19 +1,19 @@
 #include "tmc_stepper.h"
 
-TMCStepper::TMCStepper( int8_t pin_dir, int8_t pin_step, int8_t pin_ms2, int8_t pin_ms1, int8_t pin_en )
-    :   pin_dir( pin_dir ), pin_step( pin_step ), pin_ms2( pin_ms2 ), pin_ms1( pin_ms1), pin_en( pin_en )
+TMCStepper::TMCStepper( gpio_num_t DIR, gpio_num_t STEP, gpio_num_t MS2, gpio_num_t MS1, gpio_num_t EN )
+    :   DIR( DIR ), STEP( STEP ), MS2( MS2 ), MS1( MS1), EN( EN )
 {
 }
 
 void TMCStepper::begin()
 {
-    pinMode( pin_dir,  OUTPUT );
-    pinMode( pin_step, OUTPUT );
-    pinMode( pin_ms2,  OUTPUT );
-    pinMode( pin_ms1,  OUTPUT );
-    pinMode( pin_en,   OUTPUT );
+    gpio_set_direction( DIR,  GPIO_MODE_OUTPUT );
+    gpio_set_direction( STEP, GPIO_MODE_OUTPUT );
+    gpio_set_direction( MS2,  GPIO_MODE_OUTPUT );
+    gpio_set_direction( MS1,  GPIO_MODE_OUTPUT );
+    gpio_set_direction( EN,   GPIO_MODE_OUTPUT );
 
-    digitalWrite( pin_en, LOW ); /* Enabled */
+    gpio_set_level( EN, LOW ); /* Enabled */
     setMicroStep( 8 ); /* Default */
 }
 
@@ -31,22 +31,22 @@ bool TMCStepper::setMicroStep(int step)
     switch( step )
     {
         case 8:
-            digitalWrite( pin_ms1, LOW );
-            digitalWrite( pin_ms2, LOW );
+            gpio_set_level( MS1, LOW );
+            gpio_set_level( MS2, LOW );
             return true;
 
         case 2:
-            digitalWrite( pin_ms1, HIGH );
-            digitalWrite( pin_ms2, LOW );
+            gpio_set_level( MS1, HIGH );
+            gpio_set_level( MS2, LOW );
             return true;
 
         case 4:
-            digitalWrite( pin_ms1, LOW );
-            digitalWrite( pin_ms2, HIGH );
+            gpio_set_level( MS1, LOW );
+            gpio_set_level( MS2, HIGH );
             return true;
         case 16:
-            digitalWrite( pin_ms1, HIGH );
-            digitalWrite( pin_ms2, HIGH );
+            gpio_set_level( MS1, HIGH );
+            gpio_set_level( MS2, HIGH );
             return true;
 
         default:
@@ -56,26 +56,26 @@ bool TMCStepper::setMicroStep(int step)
 
 void TMCStepper::turnCW()
 {
-    digitalWrite(pin_dir, HIGH);
-    
+    gpio_set_level(DIR, HIGH);
+
     for ( int i = 0; i < 200 * micro_step; i++ )
     {
-        digitalWrite(pin_step, HIGH);
+        gpio_set_level(STEP, HIGH);
         delayMicroseconds(2);
-        digitalWrite(pin_step, LOW);
+        gpio_set_level(STEP, LOW);
         delayMicroseconds(800);
     }
 }
 
 void TMCStepper::turnCCW()
 {
-    digitalWrite(pin_dir, LOW);
+    gpio_set_level(DIR, LOW);
 
     for ( int i = 0; i < 200 * micro_step; i++ )
     {
-        digitalWrite(pin_step, HIGH);
+        gpio_set_level(STEP, HIGH);
         delayMicroseconds(2);
-        digitalWrite(pin_step, LOW);
+        gpio_set_level(STEP, LOW);
         delayMicroseconds(800);
     }
 }

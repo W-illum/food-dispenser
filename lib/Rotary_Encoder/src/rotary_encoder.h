@@ -23,7 +23,7 @@ enum class RotationState : uint8_t {
 class Encoder
 {
 public:
-    Encoder( int8_t pin_sw, int8_t pin_a, int8_t pin_b );
+    Encoder( gpio_num_t SW, gpio_num_t A, gpio_num_t B );
     void begin();
     EncoderEvent checkUpdate();
 
@@ -32,7 +32,7 @@ private:
 
 private:
     static Encoder* instance;
-    int8_t pin_sw, pin_a, pin_b;
+    gpio_num_t SW, A, B;
 
     volatile bool event_flag = false;
 
