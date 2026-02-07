@@ -27,8 +27,7 @@ void setup()
     Serial.begin(115200);
     delay(500);
     Wire.begin(SDA, SCL);
-    //pinMode(LIDAR_PWM,  INPUT);
-    //pinMode(LED_BUILTIN, OUTPUT);
+    gpio_set_direction(LIDAR_PWM,  GPIO_MODE_INPUT);
 
     lcd.begin();
     enc.begin();
@@ -38,25 +37,48 @@ void setup()
 
 void loop()
 {
+    static const char* msg = "hello";
+    lcd.rectangleFill(4, 4, lcd.getWidth() - 8, lcd.getHeight() - 8, COLOR_BLACK);
     EncoderEvent e = enc.checkUpdate();
     if ( e != EncoderEvent::NONE)
     {
         switch(e)
         {
             case EncoderEvent::BTN:
-                Serial.print("BTN");
+                msg = "BTN";
                 break;
 
             case EncoderEvent::CW:
-                Serial.print("CW");
                 stepper.rotate( 360, Dir::CW );
+                msg = "CW";
                 break;
 
             case EncoderEvent::CCW:
-                Serial.print("CCW");
                 stepper.rotate( 360, Dir::CCW );
+                msg = "CCW";
                 break;
         }
-        Serial.print("||");
     }
+
+    int x0 = (lcd.getWidth() - lcd.getStringWidth(msg)) / 2;
+    int y0 = (lcd.getHeight() - lcd.getStringHeight(msg)) / 2;
+    lcd.text(x0, y0, msg, COLOR_WHITE);
+    lcd.display();
+
+    /*
+    Distance Sensor (needs 5V though...)
+    int16_t t = pulseIn(LIDAR_PWM, HIGH);
+    if ( t == 0 )
+        Serial.println("timeout");
+    else if ( t > 1850 )
+        Serial.println("no detection");
+    else
+    {
+        int16_t d = (t - 1000 ) * 3 / 4;
+        if ( d < 0 ) d = 0;
+        Serial.print(d);
+        Serial.println(" mm");
+    }
+    delay(500);
+    */
 }
