@@ -19,18 +19,18 @@ void TMCStepper::begin()
     gpio_set_direction( MS1,  GPIO_MODE_OUTPUT );
     gpio_set_direction( EN,   GPIO_MODE_OUTPUT );
 
-    gpio_set_level( EN, LOW ); /* Enabled */
+    gpio_set_level( EN, HIGH ); /* Not enabled by default */
     setMicroStep( 8 ); /* Default */
 }
 
-bool TMCStepper::setMicroStep( int step )
+void TMCStepper::setMicroStep( int step )
 {
     /* Stated in datasheet
     MS1     MS2     STEPS
     GND     GND     8
     VIO     GND     2
     GND     VIO     4
-    VIO     VIO     16 
+    VIO     VIO     16
     */
     micro_step = step;
 
@@ -39,32 +39,34 @@ bool TMCStepper::setMicroStep( int step )
         case 8:
             gpio_set_level( MS1, LOW );
             gpio_set_level( MS2, LOW );
-            return true;
+            break;
 
         case 2:
             gpio_set_level( MS1, HIGH );
             gpio_set_level( MS2, LOW );
-            return true;
+            break;
 
         case 4:
             gpio_set_level( MS1, LOW );
             gpio_set_level( MS2, HIGH );
-            return true;
+            break;
         case 16:
             gpio_set_level( MS1, HIGH );
             gpio_set_level( MS2, HIGH );
-            return true;
+            break;
 
         default:
-            return false; /* Silently fail basically */
+            break; /* Silently fail basically */
     }
 }
 
 void TMCStepper::rotate( uint deg, Dir dir )
 {
-    if ( dir == Dir::CW ) 
+    GPIO.out_w1tc = ( 1UL << EN ); /* Enable the driver */
+
+    if ( dir == Dir::CW )
         GPIO.out_w1ts = ( 1UL << DIR );
-    else 
+    else
         GPIO.out_w1tc = ( 1UL << DIR );
 
     remaining_steps = (uint32_t)( deg * steps_per_rev * micro_step / 360.0 );
@@ -73,7 +75,11 @@ void TMCStepper::rotate( uint deg, Dir dir )
 
 void IRAM_ATTR TMCStepper::timerISR()
 {
-    if ( !instance ) return;
+    if ( !instance )
+    {
+        GPIO.out_w1ts = ( 1UL << instance->EN ); /* Make sure driver is disabled */
+        return;
+    }
 
     if ( instance->remaining_steps > 0 )
     {
@@ -83,5 +89,9 @@ void IRAM_ATTR TMCStepper::timerISR()
 
         instance->remaining_steps -= 1;
     }
-    else timerAlarmDisable( timer );
+    else
+    {
+        timerAlarmDisable( timer );
+        GPIO.out_w1ts = ( 1UL << instance->EN ); /* Disable the driver */
+    }
 }

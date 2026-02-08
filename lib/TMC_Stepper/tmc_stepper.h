@@ -11,7 +11,7 @@ class TMCStepper
 public:
     TMCStepper( gpio_num_t DIR, gpio_num_t STEP, gpio_num_t MS2, gpio_num_t MS1, gpio_num_t EN );
     void begin();
-    bool setMicroStep( int step );
+    void setMicroStep( int step );
     void rotate( uint deg, Dir dir );
     static void IRAM_ATTR timerISR();
 
