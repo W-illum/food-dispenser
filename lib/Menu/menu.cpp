@@ -1,0 +1,330 @@
+#include "menu.h"
+
+Menu::Menu(Qwiic1in3OLED &lcd, const FeedingSchedule& schedule )
+    : lcd(lcd), schedule(schedule) {}
+
+void Menu::begin( uint8_t food_amount )
+{
+    lcd.setFont( QW_FONT_8X16 );
+    current_screen = Screen::HOME;
+    mode = InteractionMode::NAVIGATE;
+    pending_event = {};
+    edit_add_time = {};
+    selected_index = 1;
+    edit_food_amount = food_amount;
+}
+
+MenuEvent Menu::pollEvent()
+{
+    MenuEvent e = pending_event;
+    pending_event = {};
+    return e;
+}
+
+void Menu::onRotate(int dir)
+{
+    if ( mode == InteractionMode::EDIT )
+    {
+        switch ( current_screen )
+        {
+            case Screen::ADD:
+                if ( selected_index == 1 ) // Hour
+                {
+                    int h = edit_add_time.hour;
+                    h += dir;
+
+                    if ( h < 0 )  h = 23;
+                    if ( h > 23 ) h = 0;
+                    edit_add_time.hour = static_cast<uint8_t>(h);
+                }
+                if ( selected_index == 2 ) // Minute
+                {
+                    int m = edit_add_time.min;
+                    m += dir * 5;
+
+                    if ( m < 0 )  m = 55;
+                    if ( m > 55 ) m = 0;
+                    edit_add_time.min = static_cast<uint8_t>(m);
+                }
+                break;
+
+            case Screen::FOOD_AMOUNT:
+                edit_food_amount += dir * 5;
+                if ( edit_food_amount < 0 ) edit_food_amount = 0;
+                if ( edit_food_amount > 50 ) edit_food_amount = 50; /* You have a fat cat if u need more */
+                break;
+        }
+    }
+    else // InteractionMode::NAVIGATE
+    {
+        selected_index += dir;
+        int max_index = getOptionsPerScreen( current_screen );
+
+        if ( current_screen == Screen::SCHEDULES && schedule.size() == MAX_FEEDS && selected_index == 2 )
+            selected_index += dir; /* Skip over the Add button if we already are full */
+
+        if ( selected_index > max_index )
+            selected_index = 1;
+        if ( selected_index < 1 )
+            selected_index = max_index;
+    }
+}
+
+void Menu::onClick()
+{
+    switch ( current_screen )
+    {
+        case Screen::HOME:
+            current_screen = Screen::SETTINGS;
+            selected_index = 1;
+            break;
+
+        case Screen::SETTINGS:
+            switch ( selected_index )
+            {
+                case 1: current_screen = Screen::HOME; break;           // Back
+                case 2: current_screen = Screen::SCHEDULES; break;      // Schedules
+                case 3: current_screen = Screen::FOOD_AMOUNT; break;    // Food Amount
+            }
+            selected_index = 1;
+            break;
+
+        case Screen::SCHEDULES:
+            switch ( selected_index )
+            {
+                case 1: current_screen = Screen::SETTINGS; break;   // Back
+                case 2: current_screen = Screen::ADD; break;        // Add
+                case 3: current_screen = Screen::REMOVE; break;     // Remove
+            }
+            selected_index = 1;
+            break;
+
+        case Screen::FOOD_AMOUNT:
+            switch ( selected_index )
+            {
+                case 1: // Change food amount
+                    if ( mode == InteractionMode::NAVIGATE )
+                        mode = InteractionMode::EDIT;
+                    else
+                        mode = InteractionMode::NAVIGATE;
+                    break;
+
+                case 2: // Confirm
+                    pending_event.type = MenuEvent::Type::FOOD_UPDATED;
+                    pending_event.updated_grams = edit_food_amount;
+                    current_screen = Screen::SETTINGS;
+                    selected_index = 1;
+                    break;
+            }
+            break;
+
+        case Screen::ADD:
+            switch ( selected_index )
+            {
+                case 1: // Hour
+                case 2: // Minute
+                    if ( mode == InteractionMode:: NAVIGATE )
+                        mode = InteractionMode::EDIT;
+                    else
+                        mode = InteractionMode::NAVIGATE;
+                    break;
+
+                case 3: // Confirm
+                    pending_event.type = MenuEvent::Type::TIME_ADDED;
+                    pending_event.time_added = edit_add_time;
+                    edit_add_time = { 0, 0 };
+                    current_screen = Screen::SCHEDULES;
+                    selected_index = 1;
+                    break;
+
+                case 4: // Back
+                    edit_add_time = { 0, 0 };
+                    current_screen = Screen::SCHEDULES;
+                    selected_index = 1;
+                    break;
+
+            }
+            break;
+
+        case Screen::REMOVE:
+            switch ( selected_index )
+            {
+                case 1: // Back
+                    current_screen = Screen::SCHEDULES;
+                    break;
+                case 2: // schedule.data[ix = 0]
+                case 3: // schedule.data[ix = 1]
+                case 4: // schedule.data[ix = 2]
+                case 5: // schedule.data[ix = 3]
+                    pending_event.type = MenuEvent::Type::TIME_REMOVED;
+                    pending_event.index_removed = selected_index - 2;
+                    /* Keep same screen if user want to remove multiple times */
+                    selected_index = 1;
+            }
+            break;
+
+    }
+}
+
+void Menu::render()
+{
+    lcd.erase();
+    switch (current_screen)
+    {
+        case Screen::HOME: renderHome(); break;
+
+        case Screen::SETTINGS: renderSettings(); break;
+
+        case Screen::SCHEDULES: renderSchedules(); break;
+
+        case Screen::ADD: renderAdd(); break;
+
+        case Screen::FOOD_AMOUNT: renderFoodAmount(); break;
+
+        case Screen::REMOVE: renderRemove(); break;
+    }
+    lcd.display();
+}
+
+uint8_t Menu::getOptionsPerScreen( Screen screen ) const
+{
+    switch( screen )
+    {
+        case Screen::HOME: return 1;
+
+        case Screen::SETTINGS: return 3;
+
+        case Screen::SCHEDULES: return 3;
+
+        case Screen::ADD: return 4;
+
+        case Screen::FOOD_AMOUNT: return 2;
+
+        case Screen::REMOVE: return 1 + schedule.size();
+
+        default: return 0;
+    }
+}
+
+void Menu::renderHome()
+{
+    // TODO: Get current time from feeder and display when the next feeding time is
+    //       Get lidar data on how much food is left in the container
+    lcd.text( 0, 0, "Next: 10:00", COLOR_WHITE );
+    lcd.text( 0, 24, "Food: 100%", COLOR_WHITE );
+    lcd.text( 0, 48, ">Settings", COLOR_WHITE );
+}
+
+void Menu::renderSettings()
+{
+    static const char* items[] = {
+        "Back",
+        "Schedules",
+        "Food Amount"
+    };
+
+    for ( int i = 0; i < 3; i++ )
+    {
+        lcd.setCursor( 0, i * 24 );
+        if ( (i + 1) == selected_index ) lcd.print( ">" );
+        lcd.print( items[i] );
+    }
+}
+
+void Menu::renderSchedules()
+{
+    static const char* items[] = {
+        "Back",
+        "Add",
+        "Remove"
+    };
+
+    for ( int i = 0; i < 3; i++ )
+    {
+        lcd.setCursor( 0, i * 15 );
+        if ( (i + 1) == selected_index ) lcd.print( ">" );
+        lcd.print( items[i] );
+    }
+    lcd.setCursor( 0, 45 );
+    const uint8_t count = schedule.size();
+    lcd.print( count );
+    lcd.print( "/" );
+    lcd.print( MAX_FEEDS );
+
+    const FeedingTime *times = schedule.data();
+    char buff[6];
+    for ( int i = 0; i < count; i++ )
+    {
+        lcd.setCursor( 75, i * 15 );
+        snprintf( buff, sizeof( buff ), "%02d:%02d", times[i].hour, times[i].min );
+        lcd.print( buff );
+    }
+}
+
+void Menu::renderFoodAmount()
+{
+    lcd.setCursor( 0, 0 );
+    if ( selected_index == 1 )
+        lcd.print( ">" );
+    if ( mode == InteractionMode::EDIT )
+        lcd.print( "*" );
+    else
+        lcd.print( " " );
+    lcd.print( edit_food_amount );
+    lcd.print( " g" );
+
+    lcd.setCursor( 0, 24 );
+    if ( selected_index == 2 ) lcd.print( ">" );
+    lcd.print( "Confirm" );
+}
+
+void Menu::renderAdd()
+{
+    char time_str[6];
+    snprintf( time_str, sizeof( time_str ) , "%02d:%02d", edit_add_time.hour, edit_add_time.min );
+
+    lcd.setCursor( 0, 0 );
+    if ( selected_index == 1 )
+    {
+        if ( mode == InteractionMode::NAVIGATE ) lcd.print( ">" );
+        if ( mode == InteractionMode::EDIT ) lcd.print( ">*" );
+    }
+
+    lcd.print( time_str );
+
+    if ( selected_index == 2 )
+    {
+        if ( mode == InteractionMode::NAVIGATE ) lcd.print( "<" );
+        if ( mode == InteractionMode::EDIT ) lcd.print( "*<" );
+    }
+
+    lcd.setCursor( 0, 24 );
+    if ( selected_index == 3 ) lcd.print( ">" );
+    lcd.print( "Confirm" );
+
+    lcd.setCursor( 0, 48 );
+    if ( selected_index == 4 ) lcd.print( ">" );
+    lcd.print( "Back" );
+}
+
+void Menu::renderRemove()
+{
+    lcd.setCursor( 0, 0 );
+    if ( selected_index == 1 ) lcd.print( ">" );
+    lcd.print( "Back" );
+
+    const uint8_t count = schedule.size();
+    const FeedingTime *times = schedule.data();
+    char buff[6];
+    for ( int i = 0; i < count; i++ )
+    {
+        if ( (i + 2) == selected_index )
+        {
+            lcd.setCursor( 65, i * 15 );
+            lcd.print( ">" );
+        }
+        lcd.setCursor( 75, i * 15 );
+        snprintf( buff, sizeof( buff ), "%02d:%02d", times[i].hour, times[i].min );
+        lcd.print( buff );
+    }
+}
