@@ -5,12 +5,12 @@ uint8_t FeedingSchedule::size() const
     return count;
 }
 
-const FeedingTime *FeedingSchedule::data() const
+const Time_t *FeedingSchedule::data() const
 {
     return times;
 }
 
-bool FeedingSchedule::add( FeedingTime time )
+bool FeedingSchedule::add( Time_t time )
 {
     if ( count >= MAX_FEEDS ) return false;
     if ( time_already_exists( time ) ) return false;
@@ -27,9 +27,9 @@ bool FeedingSchedule::add( FeedingTime time )
     return true;
 }
 
-bool FeedingSchedule::time_already_exists( FeedingTime time )
+bool FeedingSchedule::time_already_exists( Time_t time )
 {
-    for (const FeedingTime &t : times )
+    for (const Time_t &t : times )
     {
         if ( t.hour == time.hour && t.min == time.min ) return true;
     }
