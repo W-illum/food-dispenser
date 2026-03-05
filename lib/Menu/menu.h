@@ -10,21 +10,23 @@ struct MenuEvent
         NONE,
         TIME_ADDED,
         TIME_REMOVED,
-        FOOD_UPDATED
+        FOOD_UPDATED,
+        CLOCK_UPDATED
     };
 
     Type type = Type::NONE;
 
-    FeedingTime time_added = { 0, 0 };
+    Time_t time_added = { 0, 0 };
     uint8_t index_removed = 0;
     uint8_t updated_grams = 0;
+    Time_t updated_system_clock = { 0, 0 };
 };
 
 class Menu
 {
 public:
     Menu( Qwiic1in3OLED &lcd, const FeedingSchedule& schedule );
-    void begin( uint8_t food_amount );
+    void begin( uint8_t food_amount, Time_t& clock );
     MenuEvent pollEvent();
     void onRotate( int dir );
     void onClick();
@@ -38,6 +40,7 @@ public:
         ADD,
         REMOVE,
         FOOD_AMOUNT,
+        CLOCK
     };
 
     enum class InteractionMode{
@@ -53,6 +56,7 @@ private:
     void renderFoodAmount();
     void renderAdd();
     void renderRemove();
+    void renderClock();
 
 private:
     Qwiic1in3OLED &lcd;
@@ -60,8 +64,10 @@ private:
     Screen current_screen;
     InteractionMode mode;
     MenuEvent pending_event;
+    const Time_t* system_clock = nullptr;
 
-    FeedingTime edit_add_time;
+    Time_t edit_add_time;
     int selected_index;
     int edit_food_amount;
+    Time_t edit_system_clock;
 };
