@@ -9,9 +9,9 @@ Encoder::Encoder( gpio_num_t SW, gpio_num_t A, gpio_num_t B )
 void Encoder::begin()
 {
     instance = this;
-    gpio_set_direction( SW, GPIO_MODE_INPUT ); gpio_set_pull_mode(SW, GPIO_PULLUP_ONLY);
-    gpio_set_direction( A,  GPIO_MODE_INPUT ); gpio_set_pull_mode(A, GPIO_PULLUP_ONLY);
-    gpio_set_direction( B,  GPIO_MODE_INPUT ); gpio_set_pull_mode(B, GPIO_PULLUP_ONLY);
+    gpio_set_direction( SW, GPIO_MODE_INPUT ); // gpio_set_pull_mode(SW, GPIO_PULLUP_ONLY);
+    gpio_set_direction( A,  GPIO_MODE_INPUT ); // gpio_set_pull_mode(A, GPIO_PULLUP_ONLY);
+    gpio_set_direction( B,  GPIO_MODE_INPUT ); // gpio_set_pull_mode(B, GPIO_PULLUP_ONLY);
 
     attachInterrupt( SW, Encoder::isr, FALLING );
     attachInterrupt( A, Encoder::isr, CHANGE );
@@ -20,7 +20,7 @@ void Encoder::begin()
 
 EncoderEvent Encoder::checkUpdate()
 {
-    if ( !event_flag ) 
+    if ( !event_flag )
         return EncoderEvent::NONE;
 
     noInterrupts();
@@ -43,7 +43,7 @@ void Encoder::isr()
     int B =  gpio_get_level( instance->B );
 
     /* Button */
-    if ( SW == LOW ) /* TODO if problem arise: Known issue here is having the button pressed 
+    if ( SW == LOW ) /* TODO if problem arise: Known issue here is having the button pressed
                         while turning will generate button presses, fine for now */
     {
         if ( now - instance->last_btn_us < BTN_DEBOUNCE_US )
@@ -68,7 +68,9 @@ void Encoder::isr()
             /* CW */
             case RotationState::CW1:
                 if ( A == LOW && B == LOW )
+                {
                     instance->current_state = RotationState::CW2;
+                }
                 else if ( A == HIGH && B == HIGH )
                 {
                     instance->current_state = RotationState::IDLE; /* Bounce or change of direction */
@@ -98,7 +100,9 @@ void Encoder::isr()
             /* CCW */
             case RotationState::CCW1:
                 if ( A == LOW && B == LOW )
+                {
                     instance->current_state = RotationState::CCW2;
+                }
                 else if ( A == HIGH && B == HIGH )
                 {
                     instance->current_state = RotationState::IDLE; /* Bounce or change of direction */
