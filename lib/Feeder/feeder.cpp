@@ -17,6 +17,7 @@ void Feeder::begin()
     // TODO: Load eeprom to fill schedule and food amount
     rtc.init();
     menu.begin( food_amount, system_clock );
+    pinMode(LIDAR_PWM, INPUT);
 }
 
 void Feeder::update()
@@ -32,7 +33,7 @@ void Feeder::update()
         Serial.printf("%02d:%02d", dt.hour, dt.minute);
     }
 
-    /*
+
     int16_t t = pulseIn(LIDAR_PWM, HIGH);
     if ( t == 0 )
         Serial.println("timeout");
@@ -45,7 +46,7 @@ void Feeder::update()
         Serial.print(d);
         Serial.println(" mm");
     }
-    delay(500);*/
+    delay(500);
 
     EncoderEvent enc_e = enc.checkUpdate();
     if ( enc_e != EncoderEvent::NONE)
