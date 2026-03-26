@@ -331,7 +331,7 @@ bool Menu::getNextFeedTime( Time_t now, Time_t &next ) const
         return false;
     }
 
-    for ( uint8_t i = 0; i < count; ++i )
+    for ( uint8_t i = 0; i < count; i++ )
     {
         if ( times[i].hour > now.hour || ( times[i].hour == now.hour && times[i].min >= now.min ) )
         {

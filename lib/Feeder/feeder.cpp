@@ -139,9 +139,9 @@ void Feeder::processLidar()
             {
                 int16_t sorted[5] = {lidar_samples[0], lidar_samples[1], lidar_samples[2], lidar_samples[3], lidar_samples[4]};
 
-                for ( int i = 0; i < 4; ++i )
+                for ( int i = 0; i < 4; i++ )
                 {
-                    for ( int j = i + 1; j < 5; ++j )
+                    for ( int j = i + 1; j < 5; j++ )
                     {
                         if ( sorted[j] < sorted[i] )
                         {
@@ -267,9 +267,9 @@ bool Feeder::loadSettings()
     if ( expected != settings.checksum ) return false;
 
     food_amount = settings.food_amount;
-    if ( food_amount > 80 ) food_amount = 80;
+    if ( food_amount > 50 ) food_amount = 50;
 
-    for ( uint8_t i = 0; i < settings.schedule_count; ++i )
+    for ( uint8_t i = 0; i < settings.schedule_count; i++ )
     {
         if ( settings.schedule_times[i].hour <= 23 && settings.schedule_times[i].min <= 59 )
         {
@@ -288,7 +288,7 @@ bool Feeder::saveSettings()
     settings.schedule_count = schedule.size();
 
     const Time_t *times = schedule.data();
-    for ( uint8_t i = 0; i < settings.schedule_count && i < MAX_FEEDS; ++i )
+    for ( uint8_t i = 0; i < settings.schedule_count && i < MAX_FEEDS; i++ )
     {
         settings.schedule_times[i] = times[i];
     }
@@ -305,7 +305,7 @@ uint32_t Feeder::calcChecksum( const PersistedSettings &data ) const
     const size_t len = sizeof( PersistedSettings ) - sizeof( data.checksum );
 
     uint32_t sum = 0;
-    for ( size_t i = 0; i < len; ++i )
+    for ( size_t i = 0; i < len; i++ )
     {
         sum = ( sum * 131U ) + raw[i];
     }
