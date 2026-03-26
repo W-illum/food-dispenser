@@ -1,3 +1,11 @@
+/** Feeder.h
+ *
+ * Feeder class.
+ *
+ * @version 1.0.0
+ * @author William Hafström <williamillum@gmail.com>
+ */
+
 #pragma once
 #include <Arduino.h>
 #include "SparkFun_Qwiic_OLED.h"
@@ -6,6 +14,7 @@
 #include "menu.h"
 #include "feeding_schedule.h"
 #include "Ds1302.h"
+#include <EEPROM.h>
 
 #define DS_RST      GPIO_NUM_47 // D12
 #define DS_DAT      GPIO_NUM_38 // D11
@@ -26,11 +35,30 @@
 class Feeder
 {
 public:
+    /** @brief Construct a new Feeder instance.
+     */
     Feeder();
+
+    /** @brief Initialize the feeder.
+     */
     void begin();
+
+    /** @brief Update the feeder.
+     */
     void update();
 
 private:
+    struct PersistedSettings
+    {
+        uint32_t magic;
+        uint8_t version;
+        uint8_t food_amount;
+        uint8_t schedule_count;
+        Time_t schedule_times[MAX_FEEDS];
+        uint8_t reserved;
+        uint32_t checksum;
+    };
+
     Qwiic1in3OLED lcd;
     Encoder enc;
     TMCStepper stepper;
@@ -41,4 +69,22 @@ private:
     uint8_t food_amount = 0;
     Ds1302::DateTime dt;
     Time_t system_clock;
+    int16_t lidar_mm = -1;
+    uint8_t last_min = 255;
+    uint8_t last_dispense_hour = 255;
+    uint8_t last_dispense_min = 255;
+    int16_t lidar_samples[5] = {-1, -1, -1, -1, -1};
+    uint8_t lidar_sample_count = 0;
+    uint32_t lidar_last_sample_us = 0;
+
+private:
+    void handleEncoder();
+    void handleMenuEvents();
+    void processLidar();
+    void updateClock();
+    void runFeedingSchedule();
+    void dispenseFood();
+    bool loadSettings();
+    bool saveSettings();
+    uint32_t calcChecksum( const PersistedSettings &data ) const;
 };

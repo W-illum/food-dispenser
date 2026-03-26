@@ -1,3 +1,11 @@
+/** Rotary_Encoder.h
+ *
+ * Rotary_Encoder class.
+ *
+ * @version 1.0.0
+ * @author William Hafström <williamillum@gmail.com>
+ */
+
 #pragma once
 #include <Arduino.h>
 
@@ -23,8 +31,20 @@ enum class RotationState : uint8_t {
 class Encoder
 {
 public:
+    /** @brief Construct a new Encoder instance.
+     *  @param SW The GPIO pin for the button.
+     *  @param A The GPIO pin for the A channel.
+     *  @param B The GPIO pin for the B channel.
+     */
     Encoder( gpio_num_t SW, gpio_num_t A, gpio_num_t B );
+
+    /** @brief Initialize the encoder.
+     */
     void begin();
+
+    /** @brief Check for updates to the encoder state.
+     *  @return The encoder event, or EncoderEvent::NONE if no event is pending.
+     */
     EncoderEvent checkUpdate();
 
 private:

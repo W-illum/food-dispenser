@@ -1,4 +1,11 @@
-#include <Arduino.h>
+/** Rotary_Encoder.cpp
+ *
+ * Rotary_Encoder class.
+ *
+ * @version 1.0.0
+ * @author William Hafström <williamillum@gmail.com>
+ */
+
 #include "rotary_encoder.h"
 
 Encoder *Encoder::instance = nullptr;

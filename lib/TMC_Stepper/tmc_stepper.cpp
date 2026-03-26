@@ -1,3 +1,11 @@
+/** TMCStepper.cpp
+ *
+ * TMCStepper class.
+ *
+ * @version 1.0.0
+ * @author William Hafström <williamillum@gmail.com>
+ */
+
 #include "tmc_stepper.h"
 
 TMCStepper *TMCStepper::instance = nullptr;
@@ -60,7 +68,7 @@ void TMCStepper::setMicroStep( int step )
     }
 }
 
-void TMCStepper::rotate( uint deg, Dir dir )
+void TMCStepper::rotate( unsigned int deg, Dir dir )
 {
     GPIO.out_w1tc = ( 1UL << EN ); /* Enable the driver */
 
@@ -77,7 +85,7 @@ void IRAM_ATTR TMCStepper::timerISR()
 {
     if ( !instance )
     {
-        GPIO.out_w1ts = ( 1UL << instance->EN ); /* Make sure driver is disabled */
+        timerAlarmDisable( timer );
         return;
     }
 

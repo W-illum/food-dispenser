@@ -1,3 +1,11 @@
+/** Feeding_Schedule.cpp
+ *
+ * FeedingSchedule class.
+ *
+ * @version 1.0.0
+ * @author William Hafström <williamillum@gmail.com>
+ */
+
 #include "feeding_schedule.h"
 
 uint8_t FeedingSchedule::size() const
@@ -13,7 +21,7 @@ const Time_t *FeedingSchedule::data() const
 bool FeedingSchedule::add( Time_t time )
 {
     if ( count >= MAX_FEEDS ) return false;
-    if ( time_already_exists( time ) ) return false;
+    if ( containsTime( time ) ) return false;
 
     int i = count - 1;
     while ( i >= 0 && ( times[i].hour > time.hour || ( times[i].hour == time.hour && times[i].min > time.min ) ) )
@@ -27,7 +35,7 @@ bool FeedingSchedule::add( Time_t time )
     return true;
 }
 
-bool FeedingSchedule::time_already_exists( Time_t time )
+bool FeedingSchedule::containsTime( Time_t time ) const
 {
     for (const Time_t &t : times )
     {

@@ -1,3 +1,11 @@
+/** Menu.cpp
+ *
+ * Menu class.
+ *
+ * @version 1.0.0
+ * @author William Hafström <williamillum@gmail.com>
+ */
+
 #include "menu.h"
 
 Menu::Menu(Qwiic1in3OLED &lcd, const FeedingSchedule& schedule )
@@ -14,6 +22,8 @@ void Menu::begin( uint8_t food_amount, Time_t& clock )
     selected_index = 1;
     edit_food_amount = food_amount;
     edit_system_clock = {};
+    home_food_amount = food_amount;
+    home_lidar_mm = -1;
 }
 
 MenuEvent Menu::pollEvent()
@@ -237,6 +247,16 @@ void Menu::render()
     lcd.display();
 }
 
+void Menu::setFoodAmount( uint8_t grams )
+{
+    home_food_amount = grams;
+}
+
+void Menu::setLidarMm( int16_t mm )
+{
+    home_lidar_mm = mm;
+}
+
 uint8_t Menu::getOptionsPerScreen( Screen screen ) const
 {
     switch( screen )
@@ -261,11 +281,68 @@ uint8_t Menu::getOptionsPerScreen( Screen screen ) const
 
 void Menu::renderHome()
 {
-    // TODO: Get current time from feeder and display when the next feeding time is
-    //       Get lidar data on how much food is left in the container
-    lcd.text( 0, 0, "Next: 10:00", COLOR_WHITE );
-    lcd.text( 0, 24, "Food: 100%", COLOR_WHITE );
-    lcd.text( 0, 48, ">Settings", COLOR_WHITE );
+    char buff[24] = {0};
+
+    const Time_t now = ( system_clock != nullptr ) ? *system_clock : Time_t{0, 0};
+    snprintf( buff, sizeof( buff ), "Time %02d:%02d", now.hour, now.min );
+    lcd.text( 0, 0, buff, COLOR_WHITE );
+
+    Time_t next = {0, 0};
+    if ( getNextFeedTime( now, next ) )
+    {
+        snprintf( buff, sizeof( buff ), "Next %02d:%02d %ug", next.hour, next.min, home_food_amount );
+    }
+    else
+    {
+        snprintf( buff, sizeof( buff ), "Next --:-- %ug", home_food_amount );
+    }
+    lcd.text( 0, 16, buff, COLOR_WHITE );
+
+    if ( home_lidar_mm >= 0 )
+    {
+        const int max_mm = 400;
+        const int clamped = ( home_lidar_mm > max_mm ) ? max_mm : home_lidar_mm;
+        const int pct = 100 - ( clamped * 100 / max_mm );
+        snprintf( buff, sizeof( buff ), "Lvl %3dmm %3d%%", home_lidar_mm, pct );
+    }
+    else if ( home_lidar_mm == -2 )
+    {
+        snprintf( buff, sizeof( buff ), "Lvl no target" );
+    }
+    else
+    {
+        snprintf( buff, sizeof( buff ), "Lvl reading..." );
+    }
+    lcd.text( 0, 32, buff, COLOR_WHITE );
+
+    if ( selected_index == 1 )
+    {
+        lcd.text( 0, 48, ">Settings", COLOR_WHITE );
+    }
+}
+
+bool Menu::getNextFeedTime( Time_t now, Time_t &next ) const
+{
+    const uint8_t count = schedule.size();
+    const Time_t *times = schedule.data();
+
+    if ( count == 0 || times == nullptr )
+    {
+        return false;
+    }
+
+    for ( uint8_t i = 0; i < count; ++i )
+    {
+        if ( times[i].hour > now.hour || ( times[i].hour == now.hour && times[i].min >= now.min ) )
+        {
+            next = times[i];
+            return true;
+        }
+    }
+
+    // Wrapped to next day.
+    next = times[0];
+    return true;
 }
 
 void Menu::renderSettings()
