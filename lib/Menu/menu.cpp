@@ -26,9 +26,9 @@ void Menu::begin( uint8_t food_amount, const Time_t& clock )
     home_lidar_mm = -1;
 }
 
-MenuEvent Menu::pollEvent()
+FeederEvent Menu::pollEvent()
 {
-    MenuEvent e = pending_event;
+    FeederEvent e = pending_event;
     pending_event = {};
     return e;
 }
@@ -144,7 +144,7 @@ void Menu::onClick()
                     break;
 
                 case 2: // Confirm
-                    pending_event.type = MenuEvent::Type::FOOD_UPDATED;
+                    pending_event.type = FeederEvent::Type::FOOD_UPDATED;
                     pending_event.updated_grams = edit_food_amount;
                     current_screen = Screen::SETTINGS;
                     selected_index = 1;
@@ -164,7 +164,7 @@ void Menu::onClick()
                     break;
 
                 case 3: // Confirm
-                    pending_event.type = MenuEvent::Type::TIME_ADDED;
+                    pending_event.type = FeederEvent::Type::TIME_ADDED;
                     pending_event.time_added = edit_add_time;
                     edit_add_time = { 0, 0 };
                     current_screen = Screen::SCHEDULES;
@@ -190,7 +190,7 @@ void Menu::onClick()
                 case 3: // schedule.data[ix = 1]
                 case 4: // schedule.data[ix = 2]
                 case 5: // schedule.data[ix = 3]
-                    pending_event.type = MenuEvent::Type::TIME_REMOVED;
+                    pending_event.type = FeederEvent::Type::TIME_REMOVED;
                     pending_event.index_removed = selected_index - 2;
                     /* Keep same screen if user want to remove multiple times */
                     selected_index = 1;
@@ -210,7 +210,7 @@ void Menu::onClick()
                     break;
 
                 case 3: // Confirm
-                    pending_event.type = MenuEvent::Type::CLOCK_UPDATED;
+                    pending_event.type = FeederEvent::Type::CLOCK_UPDATED;
                     pending_event.updated_system_clock = edit_system_clock;
                     current_screen = Screen::SETTINGS;
                     selected_index = 1;

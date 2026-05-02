@@ -78,7 +78,7 @@ private:
 
 private:
     void handleEncoder();
-    void handleMenuEvents();
+    void handleFeederEvents();
     void processLidar();
     void updateClock();
     void runFeedingSchedule();

@@ -12,24 +12,7 @@
 #include "res/qw_fnt_8x16.h"
 #include "res/qw_fnt_5x7.h"
 #include "feeding_schedule.h"
-
-struct MenuEvent
-{
-    enum class Type{
-        NONE,
-        TIME_ADDED,
-        TIME_REMOVED,
-        FOOD_UPDATED,
-        CLOCK_UPDATED
-    };
-
-    Type type = Type::NONE;
-
-    Time_t time_added = { 0, 0 };
-    uint8_t index_removed = 0;
-    uint8_t updated_grams = 0;
-    Time_t updated_system_clock = { 0, 0 };
-};
+#include "feeder_event.h"
 
 class Menu
 {
@@ -46,10 +29,10 @@ public:
      */
     void begin( uint8_t food_amount, const Time_t& clock );
 
-    /** @brief Poll for menu events.
-     *  @return The menu event, or MenuEvent::Type::NONE if no event is pending.
+    /** @brief Poll for pending events.
+     *  @return The pending event, or FeederEvent::Type::NONE if no event is pending.
      */
-    MenuEvent pollEvent();
+    FeederEvent pollEvent();
 
     /** @brief Handle rotation input.
      *  @param dir The rotation direction.
@@ -106,7 +89,7 @@ private:
     const FeedingSchedule& schedule;
     Screen current_screen;
     InteractionMode mode;
-    MenuEvent pending_event;
+    FeederEvent pending_event;
     const Time_t* system_clock = nullptr;
 
     Time_t edit_add_time;

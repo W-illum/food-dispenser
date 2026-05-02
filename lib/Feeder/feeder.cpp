@@ -102,7 +102,7 @@ void Feeder::update()
     runFeedingSchedule();
 
     handleEncoder();
-    handleMenuEvents();
+    handleFeederEvents();
     menu.render();
 }
 
@@ -214,33 +214,33 @@ void Feeder::handleEncoder()
     }
 }
 
-void Feeder::handleMenuEvents()
+void Feeder::handleFeederEvents()
 {
-    MenuEvent menu_e = menu.pollEvent();
-    if ( menu_e.type != MenuEvent::Type::NONE )
+    FeederEvent event = menu.pollEvent();
+    if ( event.type != FeederEvent::Type::NONE )
     {
-        switch( menu_e.type )
+        switch( event.type )
         {
-            case MenuEvent::Type::TIME_ADDED:
-                if ( schedule.add( menu_e.time_added ) )
+            case FeederEvent::Type::TIME_ADDED:
+                if ( schedule.add( event.time_added ) )
                 {
                     saveSettings();
                 }
                 break;
 
-            case MenuEvent::Type::TIME_REMOVED:
-                schedule.remove( menu_e.index_removed );
+            case FeederEvent::Type::TIME_REMOVED:
+                schedule.remove( event.index_removed );
                 saveSettings();
                 break;
 
-            case MenuEvent::Type::FOOD_UPDATED:
-                food_amount = menu_e.updated_grams;
+            case FeederEvent::Type::FOOD_UPDATED:
+                food_amount = event.updated_grams;
                 menu.setFoodAmount( food_amount );
                 saveSettings();
                 break;
 
-            case MenuEvent::Type::CLOCK_UPDATED:
-                system_clock = menu_e.updated_system_clock;
+            case FeederEvent::Type::CLOCK_UPDATED:
+                system_clock = event.updated_system_clock;
                 dt.hour = system_clock.hour;
                 dt.minute = system_clock.min;
                 dt.second = 0;
