@@ -16,9 +16,9 @@ Encoder::Encoder( gpio_num_t SW, gpio_num_t A, gpio_num_t B )
 void Encoder::begin()
 {
     instance = this;
-    gpio_set_direction( SW, GPIO_MODE_INPUT ); // gpio_set_pull_mode(SW, GPIO_PULLUP_ONLY);
-    gpio_set_direction( A,  GPIO_MODE_INPUT ); // gpio_set_pull_mode(A, GPIO_PULLUP_ONLY);
-    gpio_set_direction( B,  GPIO_MODE_INPUT ); // gpio_set_pull_mode(B, GPIO_PULLUP_ONLY);
+    gpio_set_direction( SW, GPIO_MODE_INPUT );
+    gpio_set_direction( A,  GPIO_MODE_INPUT );
+    gpio_set_direction( B,  GPIO_MODE_INPUT );
 
     attachInterrupt( SW, Encoder::isr, FALLING );
     attachInterrupt( A, Encoder::isr, CHANGE );
