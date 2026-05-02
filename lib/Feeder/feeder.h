@@ -70,7 +70,6 @@ private:
     Ds1302::DateTime dt;
     Time_t system_clock;
     int16_t lidar_mm = -1;
-    uint8_t last_min = 255;
     uint8_t last_dispense_hour = 255;
     uint8_t last_dispense_min = 255;
     int16_t lidar_samples[5] = {-1, -1, -1, -1, -1};

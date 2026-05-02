@@ -85,7 +85,7 @@ void IRAM_ATTR TMCStepper::timerISR()
 {
     if ( !instance )
     {
-        timerAlarmDisable( timer );
+        if ( timer ) timerAlarmDisable( timer );
         return;
     }
 

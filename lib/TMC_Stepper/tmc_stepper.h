@@ -45,10 +45,8 @@ public:
      */
     static void IRAM_ATTR timerISR();
 
-public:
-    volatile uint32_t remaining_steps = 0;
-
 private:
+    volatile uint32_t remaining_steps = 0;
     gpio_num_t DIR, STEP, MS2, MS1, EN;
     int micro_step;
     int steps_per_rev = 200;
