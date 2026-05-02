@@ -44,7 +44,7 @@ public:
      *  @param food_amount The initial food amount.
      *  @param clock The system clock.
      */
-    void begin( uint8_t food_amount, Time_t& clock );
+    void begin( uint8_t food_amount, const Time_t& clock );
 
     /** @brief Poll for menu events.
      *  @return The menu event, or MenuEvent::Type::NONE if no event is pending.
@@ -93,13 +93,13 @@ public:
 private:
     uint8_t getOptionsPerScreen( Screen screen ) const;
     bool getNextFeedTime( Time_t now, Time_t &next ) const;
-    void renderHome();
-    void renderSettings();
-    void renderSchedules();
-    void renderFoodAmount();
-    void renderAdd();
-    void renderRemove();
-    void renderClock();
+    void renderHome() const;
+    void renderSettings() const;
+    void renderSchedules() const;
+    void renderFoodAmount() const;
+    void renderAdd() const;
+    void renderRemove() const;
+    void renderClock() const;
 
 private:
     Qwiic1in3OLED &lcd;

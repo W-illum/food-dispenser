@@ -11,7 +11,7 @@
 Menu::Menu(Qwiic1in3OLED &lcd, const FeedingSchedule& schedule )
     : lcd(lcd), schedule(schedule) {}
 
-void Menu::begin( uint8_t food_amount, Time_t& clock )
+void Menu::begin( uint8_t food_amount, const Time_t& clock )
 {
     lcd.setFont( QW_FONT_8X16 );
     current_screen = Screen::HOME;
@@ -279,7 +279,7 @@ uint8_t Menu::getOptionsPerScreen( Screen screen ) const
     }
 }
 
-void Menu::renderHome()
+void Menu::renderHome() const
 {
     char buff[24] = {0};
 
@@ -345,7 +345,7 @@ bool Menu::getNextFeedTime( Time_t now, Time_t &next ) const
     return true;
 }
 
-void Menu::renderSettings()
+void Menu::renderSettings() const
 {
     static const char* items[] = {
         "Back",
@@ -362,7 +362,7 @@ void Menu::renderSettings()
     }
 }
 
-void Menu::renderSchedules()
+void Menu::renderSchedules() const
 {
     static const char* items[] = {
         "Back",
@@ -392,7 +392,7 @@ void Menu::renderSchedules()
     }
 }
 
-void Menu::renderFoodAmount()
+void Menu::renderFoodAmount() const
 {
     lcd.setCursor( 0, 0 );
     if ( selected_index == 1 )
@@ -409,7 +409,7 @@ void Menu::renderFoodAmount()
     lcd.print( "Confirm" );
 }
 
-void Menu::renderAdd()
+void Menu::renderAdd() const
 {
     char time_str[6];
     snprintf( time_str, sizeof( time_str ) , "%02d:%02d", edit_add_time.hour, edit_add_time.min );
@@ -438,7 +438,7 @@ void Menu::renderAdd()
     lcd.print( "Back" );
 }
 
-void Menu::renderRemove()
+void Menu::renderRemove() const
 {
     lcd.setCursor( 0, 0 );
     if ( selected_index == 1 ) lcd.print( ">" );
@@ -460,7 +460,7 @@ void Menu::renderRemove()
     }
 }
 
-void Menu::renderClock()
+void Menu::renderClock() const
 {
     char clock_str[6];
     snprintf( clock_str, sizeof( clock_str ) , "%02d:%02d", edit_system_clock.hour, edit_system_clock.min );
