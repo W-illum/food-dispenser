@@ -8,7 +8,7 @@
 
 #pragma once
 #include <stdint.h>
-#include "time.h"
+#include "feeder_time.h"
 
 #define MAX_FEEDS 4
 

@@ -14,6 +14,7 @@
 #include "menu.h"
 #include "feeding_schedule.h"
 #include "Ds1302.h"
+#include "ble_controller.h"
 #include <EEPROM.h>
 
 #define DS_RST      GPIO_NUM_47 // D12
@@ -65,6 +66,7 @@ private:
     Menu menu;
     FeedingSchedule schedule;
     Ds1302 rtc;
+    BLEController ble;
 
     uint8_t food_amount = 0;
     Ds1302::DateTime dt;
@@ -82,7 +84,7 @@ private:
     void processLidar();
     void updateClock();
     void runFeedingSchedule();
-    void dispenseFood();
+    void dispenseFood( uint8_t grams = 0 );
     bool loadSettings();
     bool saveSettings();
     uint32_t calcChecksum( const PersistedSettings &data ) const;

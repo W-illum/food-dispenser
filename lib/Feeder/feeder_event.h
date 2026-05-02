@@ -18,7 +18,8 @@ struct FeederEvent
         TIME_ADDED,
         TIME_REMOVED,
         FOOD_UPDATED,
-        CLOCK_UPDATED
+        CLOCK_UPDATED,
+        MANUAL_FEED
     };
 
     Type type = Type::NONE;
@@ -27,4 +28,5 @@ struct FeederEvent
     uint8_t index_removed = 0;
     uint8_t updated_grams = 0;
     Time_t updated_system_clock = { 0, 0 };
+    uint8_t manual_feed_grams = 0;
 };

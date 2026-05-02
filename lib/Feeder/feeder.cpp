@@ -93,6 +93,8 @@ void Feeder::begin()
     menu.begin( food_amount, system_clock );
     menu.setFoodAmount( food_amount );
     menu.setLidarMm( lidar_mm );
+
+    ble.begin( schedule, food_amount, system_clock );
 }
 
 void Feeder::update()
@@ -104,13 +106,18 @@ void Feeder::update()
     handleEncoder();
     handleFeederEvents();
     menu.render();
+    ble.update();
 }
 
 void Feeder::updateClock()
 {
     rtc.getDateTime( &dt );
-    system_clock.hour = dt.hour;
-    system_clock.min = dt.minute;
+    if ( dt.hour != system_clock.hour || dt.minute != system_clock.min )
+    {
+        system_clock.hour = dt.hour;
+        system_clock.min = dt.minute;
+        ble.setSystemClock( system_clock );
+    }
 }
 
 void Feeder::processLidar()
@@ -154,6 +161,7 @@ void Feeder::processLidar()
 
                 lidar_mm = sorted[2];
                 menu.setLidarMm( lidar_mm );
+                ble.setLidarMm( lidar_mm );
                 lidar_sample_count = 0;
             }
         }
@@ -162,6 +170,7 @@ void Feeder::processLidar()
     {
         lidar_mm = mm;
         menu.setLidarMm( lidar_mm );
+        ble.setLidarMm( lidar_mm );
         lidar_sample_count = 0;
         lidar_last_sample_us = now_us;
     }
@@ -181,11 +190,12 @@ void Feeder::runFeedingSchedule()
     last_dispense_min = dt.minute;
 }
 
-void Feeder::dispenseFood()
+void Feeder::dispenseFood( uint8_t grams )
 {
-    if ( food_amount == 0 ) return;
+    if ( grams == 0 ) grams = food_amount;
+    if ( grams == 0 ) return;
 
-    const unsigned int deg = static_cast<unsigned int>( food_amount ) * kDegreesPerGram;
+    const unsigned int deg = static_cast<unsigned int>( grams ) * kDegreesPerGram;
     stepper.rotate( deg, Dir::CW );
 }
 
@@ -217,39 +227,46 @@ void Feeder::handleEncoder()
 void Feeder::handleFeederEvents()
 {
     FeederEvent event = menu.pollEvent();
-    if ( event.type != FeederEvent::Type::NONE )
+    if ( event.type == FeederEvent::Type::NONE )
+        event = ble.pollEvent();
+
+    switch( event.type )
     {
-        switch( event.type )
-        {
-            case FeederEvent::Type::TIME_ADDED:
-                if ( schedule.add( event.time_added ) )
-                {
-                    saveSettings();
-                }
-                break;
-
-            case FeederEvent::Type::TIME_REMOVED:
-                schedule.remove( event.index_removed );
+        case FeederEvent::Type::TIME_ADDED:
+            if ( schedule.add( event.time_added ) )
+            {
                 saveSettings();
-                break;
+                ble.notifyScheduleChanged();
+            }
+            break;
 
-            case FeederEvent::Type::FOOD_UPDATED:
-                food_amount = event.updated_grams;
-                menu.setFoodAmount( food_amount );
-                saveSettings();
-                break;
+        case FeederEvent::Type::TIME_REMOVED:
+            schedule.remove( event.index_removed );
+            saveSettings();
+            ble.notifyScheduleChanged();
+            break;
 
-            case FeederEvent::Type::CLOCK_UPDATED:
-                system_clock = event.updated_system_clock;
-                dt.hour = system_clock.hour;
-                dt.minute = system_clock.min;
-                dt.second = 0;
-                rtc.setDateTime( &dt );
-                break;
+        case FeederEvent::Type::FOOD_UPDATED:
+            food_amount = event.updated_grams;
+            menu.setFoodAmount( food_amount );
+            ble.setFoodAmount( food_amount );
+            saveSettings();
+            break;
 
-            default:
-                break;
-        }
+        case FeederEvent::Type::CLOCK_UPDATED:
+            system_clock = event.updated_system_clock;
+            dt.hour = system_clock.hour;
+            dt.minute = system_clock.min;
+            dt.second = 0;
+            rtc.setDateTime( &dt );
+            break;
+
+        case FeederEvent::Type::MANUAL_FEED:
+            dispenseFood( event.manual_feed_grams );
+            break;
+
+        default:
+            break;
     }
 }
 
